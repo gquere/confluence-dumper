@@ -15,6 +15,7 @@ import shutil
 import re
 import urllib3
 import urllib
+from bs4 import BeautifulSoup
 
 # SUPPRESS WARNINGS
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -93,6 +94,9 @@ def write_html_2_file(path, title, content, html_template, additional_headers=No
     :param additional_headers: (optional) Additional HTML headers.
     """
     html_content = html_template
+
+    soup = BeautifulSoup(content)
+    content = soup.get_text('\n')
 
     # Build additional HTML headers
     additional_html_headers = '\n\t'.join(additional_headers) if additional_headers else ''

@@ -30,7 +30,6 @@ import settings
 CONFLUENCE_DUMPER_VERSION = '1.0.0'
 TITLE_OUTPUT = 'C O N F L U E N C E   D U M P E R  %s' % CONFLUENCE_DUMPER_VERSION
 
-
 def error_print(*args, **kwargs):
     """ Wrapper for the print function which leads to stderr outputs.
 
@@ -274,7 +273,7 @@ def create_html_attachment_index(attachments):
     return html_content
 
 
-def fetch_page_recursively(page_id, folder_path, download_folder, html_template, depth=0,
+def fetch_page_recursively(session, page_id, folder_path, download_folder, html_template, depth=0,
                            page_duplicate_file_names=None, page_file_matching=None,
                            attachment_duplicate_file_names=None, attachment_file_matching=None):
     """ Fetches a Confluence page and its child pages (with referenced downloads).
@@ -303,7 +302,7 @@ def fetch_page_recursively(page_id, folder_path, download_folder, html_template,
     page_url = '%s/rest/api/content/%s?expand=children.page,children.attachment,body.view.value' \
                % (settings.CONFLUENCE_BASE_URL, page_id)
     try:
-        response = utils.http_get(page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
+        response = utils.http_get(session, page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
                                   verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
                                   proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
         page_content = response['body']['view']['value']
@@ -323,7 +322,7 @@ def fetch_page_recursively(page_id, folder_path, download_folder, html_template,
         page_url = '%s/rest/api/content/%s/child/attachment?limit=25' % (settings.CONFLUENCE_BASE_URL, page_id)
         counter = 0
         while page_url:
-            response = utils.http_get(page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
+            response = utils.http_get(session, page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
                                       verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
                                       proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
             counter += len(response['results'])
@@ -366,12 +365,12 @@ def fetch_page_recursively(page_id, folder_path, download_folder, html_template,
         page_url = '%s/rest/api/content/%s/child/page?limit=25' % (settings.CONFLUENCE_BASE_URL, page_id)
         counter = 0
         while page_url:
-            response = utils.http_get(page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
+            response = utils.http_get(session, page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
                                       verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
                                       proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
             counter += len(response['results'])
             for child_page in response['results']:
-                paths = fetch_page_recursively(child_page['id'], folder_path, download_folder, html_template,
+                paths = fetch_page_recursively(session, child_page['id'], folder_path, download_folder, html_template,
                                                depth=depth+1, page_duplicate_file_names=page_duplicate_file_names,
                                                page_file_matching=page_file_matching)
                 if paths:
@@ -445,6 +444,10 @@ def main():
     template_file = open(settings.TEMPLATE_FILE)
     html_template = template_file.read()
 
+    session = utils.http_init(settings.CONFLUENCE_BASE_URL, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
+                                      verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
+                                      proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
+
     # Fetch all spaces if spaces were not configured via settings
     if len(settings.SPACES_TO_EXPORT) > 0:
         spaces_to_export = settings.SPACES_TO_EXPORT
@@ -452,7 +455,7 @@ def main():
         spaces_to_export = []
         page_url = '%s/rest/api/space?limit=25' % settings.CONFLUENCE_BASE_URL
         while page_url:
-            response = utils.http_get(page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
+            response = utils.http_get(session, page_url, auth=settings.HTTP_AUTHENTICATION, headers=settings.HTTP_CUSTOM_HEADERS,
                                       verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
                                       proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
             for space in response['results']:
@@ -482,7 +485,7 @@ def main():
             os.makedirs(download_folder)
 
             space_url = '%s/rest/api/space/%s?expand=homepage' % (settings.CONFLUENCE_BASE_URL, space)
-            response = utils.http_get(space_url, auth=settings.HTTP_AUTHENTICATION,
+            response = utils.http_get(session, space_url, auth=settings.HTTP_AUTHENTICATION,
                                       headers=settings.HTTP_CUSTOM_HEADERS,
                                       verify_peer_certificate=settings.VERIFY_PEER_CERTIFICATE,
                                       proxies=settings.HTTP_PROXIES, cookies=settings.HTTP_COOKIES)
@@ -495,7 +498,7 @@ def main():
             else:
                 space_page_id = -1
 
-            path_collection = fetch_page_recursively(space_page_id, space_folder, download_folder, html_template)
+            path_collection = fetch_page_recursively(session, space_page_id, space_folder, download_folder, html_template)
 
             if path_collection:
                 # Create index file for this space

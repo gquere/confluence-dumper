@@ -26,8 +26,11 @@ class ConfluenceException(Exception):
     def __init__(self, message):
         super(ConfluenceException, self).__init__(message)
 
+def http_init(request_url, auth=None, headers=None, verify_peer_certificate=True, proxies=None, cookies=None):
+    session = requests.Session()
+    return session
 
-def http_get(request_url, auth=None, headers=None, verify_peer_certificate=True, proxies=None, cookies=None):
+def http_get(session, request_url, auth=None, headers=None, verify_peer_certificate=True, proxies=None, cookies=None):
     """ Requests a HTTP url and returns a requested JSON response.
 
     :param request_url: HTTP URL to request.
@@ -38,7 +41,7 @@ def http_get(request_url, auth=None, headers=None, verify_peer_certificate=True,
     :returns: JSON response.
     :raises: ConfluenceException in the case of the server does not answer HTTP code 200.
     """
-    response = requests.get(request_url, auth=auth, headers=headers, verify=verify_peer_certificate, proxies=proxies, cookies=cookies)
+    response = session.get(request_url, auth=auth, headers=headers, verify=verify_peer_certificate, proxies=proxies, cookies=cookies)
     if 200 == response.status_code:
         return response.json()
     else:

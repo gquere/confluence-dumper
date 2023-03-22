@@ -50,6 +50,7 @@ HTML_FORWARD_MESSAGE = '<a href="%s">If you are not automatically forwarded to %
 
 # Download attachments
 GRAB_ATTACHMENTS = True
+ATTACHMENTS_EXT = ['xml', 'sh', 'txt', 'kdbx', 'py', 'json', 'yml', 'yaml']
 
 # Download thumbnails
 GRAB_THUMBNAILS = True

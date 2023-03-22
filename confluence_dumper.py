@@ -332,10 +332,13 @@ def fetch_page_recursively(page_id, folder_path, download_folder, html_template,
                 for attachment in response['results']:
                     download_url = attachment['_links']['download']
                     attachment_id = attachment['id'][3:]
-                    attachment_info = download_attachment(download_url, download_folder, attachment_id,
-                                                          attachment_duplicate_file_names, attachment_file_matching,
-                                                          depth=depth+1)
-                    path_collection['child_attachments'].append(attachment_info)
+                    attachment_file_name = derive_downloaded_file_name(download_url)
+                    print("ATTACHMENT - {}".format(attachment_file_name))
+                    if utils.is_file_format(attachment_file_name, settings.ATTACHMENTS_EXT):
+                        attachment_info = download_attachment(download_url, download_folder, attachment_id,
+                                                              attachment_duplicate_file_names, attachment_file_matching,
+                                                              depth=depth+1)
+                        path_collection['child_attachments'].append(attachment_info)
 
             if 'next' in response['_links'].keys():
                 page_url = response['_links']['next']

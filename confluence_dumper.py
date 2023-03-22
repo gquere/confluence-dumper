@@ -137,7 +137,10 @@ def handle_html_references(html_content, page_duplicate_file_names, page_file_ma
             try:
                 page_title = link_element.attrib['href'].split('/')[4]
             except:
-                page_title = link_element.attrib['href'].split('/')[3]
+                try:
+                    page_title = link_element.attrib['href'].split('/')[3]
+                except:
+                    page_title = link_element.attrib['href'].split('/')[2]
 
             page_title = page_title.replace('+', ' ')
             decoded_page_title = utils.decode_url(page_title)
